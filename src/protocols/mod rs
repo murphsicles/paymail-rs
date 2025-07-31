@@ -1,4 +1,3 @@
 pub mod pki;
 pub mod address_resolution;
-
-// TODO: Add more like p2p.rs
+pub mod p2p;
