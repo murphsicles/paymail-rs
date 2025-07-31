@@ -9,7 +9,10 @@ use serde_json::Value;
 use tokio::time::{Duration, Instant};
 
 use crate::errors::PaymailError;
-use crate::models::{Capabilities, PaymentDestinationResponse, PaymentRequest, PkiResponse};
+use crate::models::{
+    Capabilities, P2PPaymentDestinationRequest, P2PPaymentDestinationResponse, P2PTxRequest,
+    P2PTxResponse, PaymentDestinationResponse, PaymentRequest, PkiResponse,
+};
 use crate::resolver::resolve_host;
 use crate::utils;
 
@@ -58,7 +61,43 @@ impl PaymailClient {
         Ok(resp.output)
     }
 
-    // TODO: Add methods for P2P payments, tx submission, etc.
+    pub async fn get_p2p_payment_destination(&self, paymail: &str, satoshis: u64) -> Result<P2PPaymentDestinationResponse, PaymailError> {
+        let (alias, domain) = parse_paymail(paymail)?;
+        let caps = self.get_capabilities(&domain).await?;
+        let endpoint = get_template(&caps, "2a40af698840", &alias, &domain)?;
+        let req = P2PPaymentDestinationRequest { satoshis };
+        let resp: P2PPaymentDestinationResponse = self.http.post(&endpoint).json(&req).send().await?.json().await?;
+        Ok(resp)
+    }
+
+    pub async fn send_p2p_tx(&self, paymail: &str, hex: &str, metadata: Value, reference: &str) -> Result<P2PTxResponse, PaymailError> {
+        let (alias, domain) = parse_paymail(paymail)?;
+        let caps = self.get_capabilities(&domain).await?;
+        let endpoint = get_template(&caps, "5f1323cddf31", &alias, &domain)?;
+        let message = format!("{}|{}", hex, reference); // Adjust as per spec for signing
+        let signature = utils::generate_signature(&self.priv_key, &message)?;
+        let req = P2PTxRequest {
+            hex: hex.to_string(),
+            metadata,
+            reference: reference.to_string(),
+            signature,
+        };
+        let resp: P2PTxResponse = self.http.post(&endpoint).json(&req).send().await?.json().await?;
+        Ok(resp)
+    }
+
+    pub async fn call_extension(&self, paymail: &str, brfc_id: &str, body: Option<Value>) -> Result<Value, PaymailError> {
+        let (alias, domain) = parse_paymail(paymail)?;
+        let caps = self.get_capabilities(&domain).await?;
+        let endpoint = get_template(&caps, brfc_id, &alias, &domain)?;
+        let resp = if let Some(b) = body {
+            self.http.post(&endpoint).json(&b).send().await?
+        } else {
+            self.http.get(&endpoint).send().await?
+        };
+        let json: Value = resp.json().await?;
+        Ok(json)
+    }
 }
 
 pub struct PaymailClientBuilder {
