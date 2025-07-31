@@ -1,0 +1,24 @@
+[package]
+name = "paymail-rs"
+version = "0.1.0"
+edition = "2024"
+description = "A fast, asynchronous Rust library for the BSV PayMail protocol"
+license = "Open BSV"
+repository = "https://github.com/murphsicles/paymail-rs"
+authors = ["Dr. Roy Murphy"]
+
+[dependencies]
+tokio = { version = "1.47.0", features = ["full"] }
+reqwest = { version = "0.12.22", features = ["json", "rustls-tls"] }
+serde = { version = "1.0.219", features = ["derive"] }
+trust-dns-resolver = "0.23.2"
+chrono = "0.4.38"
+async-mutex = "1.4.0"
+sv = { git = "https://github.com/murphsicles/rust-sv.git", tag = "v0.4.3" }
+base64 = "0.22.1"
+hex = "0.4.3"
+
+[dev-dependencies]
+# Add for testing: wiremock for HTTP mocks, etc.
+wiremock = "0.6.1"  # Latest as of now
+criterion = { version = "0.5.1", features = ["async_tokio"] }  # For benchmarking
