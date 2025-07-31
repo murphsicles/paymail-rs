@@ -1,5 +1,5 @@
-use base64;
 use crate::errors::PaymailError;
+use base64;
 use hex;
 use ring::digest::{digest, SHA256};
 use secp256k1::{ecdsa, Message, PublicKey, RecoveryId, Secp256k1, SecretKey};
@@ -26,20 +26,33 @@ pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String,
     Ok(base64::engine::general_purpose::STANDARD.encode(&full_sig))
 }
 
-pub fn verify_signature(pub_key_hex: &str, signature: &str, message: &str) -> Result<bool, PaymailError> {
+pub fn verify_signature(
+    pub_key_hex: &str,
+    signature: &str,
+    message: &str,
+) -> Result<bool, PaymailError> {
     let pub_key_bytes = hex::decode(pub_key_hex).map_err(|e| PaymailError::Other(e.to_string()))?;
-    let pub_key = PublicKey::from_slice(&pub_key_bytes).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let pub_key =
+        PublicKey::from_slice(&pub_key_bytes).map_err(|e| PaymailError::Other(e.to_string()))?;
 
-    let sig_bytes = base64::engine::general_purpose::STANDARD.decode(signature).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let sig_bytes = base64::engine::general_purpose::STANDARD
+        .decode(signature)
+        .map_err(|e| PaymailError::Other(e.to_string()))?;
     if sig_bytes.len() != 65 {
-        return Err(PaymailError::InvalidSignature("Invalid signature length".to_string()));
+        return Err(PaymailError::InvalidSignature(
+            "Invalid signature length".to_string(),
+        ));
     }
     let header = sig_bytes[0];
     if !(31..=34).contains(&header) {
-        return Err(PaymailError::InvalidSignature("Invalid recovery header".to_string()));
+        return Err(PaymailError::InvalidSignature(
+            "Invalid recovery header".to_string(),
+        ));
     }
-    let recovery_id = RecoveryId::from_i32((header - 31) as i32).map_err(|e| PaymailError::Other(e.to_string()))?;
-    let compact_sig = ecdsa::RecoverableSignature::from_compact(&sig_bytes[1..], recovery_id).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let recovery_id = RecoveryId::from_i32((header - 31) as i32)
+        .map_err(|e| PaymailError::Other(e.to_string()))?;
+    let compact_sig = ecdsa::RecoverableSignature::from_compact(&sig_bytes[1..], recovery_id)
+        .map_err(|e| PaymailError::Other(e.to_string()))?;
     let standard_sig = compact_sig.to_standard();
 
     let prefix = b"Bitcoin Signed Message:\n";
