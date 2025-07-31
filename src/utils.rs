@@ -1,8 +1,11 @@
+use base64;
 use crate::errors::PaymailError;
+use hex;
 use ring::digest::{digest, SHA256};
 use secp256k1::{ecdsa, Message, PublicKey, RecoveryId, Secp256k1, SecretKey};
 use sv::script::Script;
-use sv::util::{hash256::sha256d, var_int};
+use sv::util::hash256::sha256d;
+use sv::util::var_int;
 
 pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String, PaymailError> {
     let prefix = b"Bitcoin Signed Message:\n";
@@ -18,16 +21,16 @@ pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String,
     let recoverable_sig = secp.sign_ecdsa_recoverable(&msg, priv_key);
     let (recovery_id, compact) = recoverable_sig.serialize_compact();
     let mut full_sig = [0u8; 65];
-    full_sig[0] = 31 + recovery_id.to_i32() as u8;  // Compressed pubkey
+    full_sig[0] = 31 + recovery_id.to_i32() as u8;
     full_sig[1..].copy_from_slice(&compact);
-    Ok(base64::encode(&full_sig))
+    Ok(base64::engine::general_purpose::STANDARD.encode(&full_sig))
 }
 
 pub fn verify_signature(pub_key_hex: &str, signature: &str, message: &str) -> Result<bool, PaymailError> {
     let pub_key_bytes = hex::decode(pub_key_hex).map_err(|e| PaymailError::Other(e.to_string()))?;
     let pub_key = PublicKey::from_slice(&pub_key_bytes).map_err(|e| PaymailError::Other(e.to_string()))?;
 
-    let sig_bytes = base64::decode(signature).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let sig_bytes = base64::engine::general_purpose::STANDARD.decode(signature).map_err(|e| PaymailError::Other(e.to_string()))?;
     if sig_bytes.len() != 65 {
         return Err(PaymailError::InvalidSignature("Invalid signature length".to_string()));
     }
@@ -53,7 +56,7 @@ pub fn verify_signature(pub_key_hex: &str, signature: &str, message: &str) -> Re
     Ok(secp.verify_ecdsa(&msg, &standard_sig, &pub_key).is_ok())
 }
 
-pub fn parse_script(hex: &str) -> Result<Script, PaymailError> {
-    let bytes = hex::decode(hex).map_err(|e| PaymailError::Other(e.to_string()))?;
+pub fn parse_script(hex_str: &str) -> Result<Script, PaymailError> {
+    let bytes = hex::decode(hex_str).map_err(|e| PaymailError::Other(e.to_string()))?;
     Ok(Script(bytes))
 }
