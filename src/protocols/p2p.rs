@@ -1,6 +1,6 @@
 use crate::{
-    models::{P2PPaymentDestinationResponse, P2PTxResponse},
     PaymailClient, PaymailError,
+    models::{P2PPaymentDestinationResponse, P2PTxResponse},
 };
 use serde_json::Value;
 
