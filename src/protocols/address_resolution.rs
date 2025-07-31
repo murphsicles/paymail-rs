@@ -1,4 +1,4 @@
-use crate::{models::PaymentRequest, PaymailClient, PaymailError};
+use crate::{PaymailClient, PaymailError, models::PaymentRequest};
 
 pub async fn resolve_address(
     client: &PaymailClient,
