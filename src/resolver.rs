@@ -12,13 +12,15 @@ pub async fn resolve_host(domain: &str) -> Result<(String, u16), PaymailError> {
         }
     }
     // Fallback to A/AAAA on port 443
-    let a_lookup = resolver.ipv4_lookup(domain).await?;
-    if let Some(ip) = a_lookup.iter().next() {
-        return Ok((ip.to_string(), 443));
+    if let Ok(a_lookup) = resolver.ipv4_lookup(domain).await {
+        if let Some(ip) = a_lookup.iter().next() {
+            return Ok((ip.to_string(), 443));
+        }
     }
-    let aaaa_lookup = resolver.ipv6_lookup(domain).await?;
-    if let Some(ip) = aaaa_lookup.iter().next() {
-        return Ok((ip.to_string(), 443));
+    if let Ok(aaaa_lookup) = resolver.ipv6_lookup(domain).await {
+        if let Some(ip) = aaaa_lookup.iter().next() {
+            return Ok((ip.to_string(), 443));
+        }
     }
     Err(PaymailError::DnsFailure(format!("No host found for {}", domain)))
 }
