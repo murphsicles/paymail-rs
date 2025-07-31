@@ -21,10 +21,8 @@ async fn test_get_capabilities() {
         .mount(&mock_server)
         .await;
 
-    // Override resolve_host to use mock
-    // For real test, patch resolve_host to return mock_server.uri()
-
-    // Test code...
+    // Note: In real tests, mock resolve_host to use mock_server.uri()
+    let caps = client.get_capabilities("example.com").await.unwrap();
+    assert_eq!(caps.bsvalias, "1.0");
+    // Add tests for other methods
 }
-
- // Add more tests for pubkey, payment destination, signature verification, etc.
