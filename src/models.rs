@@ -32,7 +32,7 @@ impl PaymentRequest {
 
 #[derive(Deserialize, Debug)]
 pub struct PaymentDestinationResponse {
-    pub output: String,  // Hex-encoded script
+    pub output: String, // Hex-encoded script
 }
 
 #[derive(Deserialize, Debug)]
