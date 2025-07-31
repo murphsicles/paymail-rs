@@ -1,30 +1,32 @@
 use paymail_rs::{models::PaymentRequest, PaymailClient};
 use secp256k1::SecretKey;
 use tokio;
+use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Dummy private key; in real use, load from wallet
-    let priv_key_bytes = [0u8; 32]; // Replace with actual key bytes
-    let priv_key = SecretKey::from_slice(&priv_key_bytes)?;
-
+    let priv_key = SecretKey::from_slice(&[0; 32])?;
     let client = PaymailClient::builder().build(priv_key);
 
-    // Example: Get pubkey
-    let pubkey = client.get_pubkey("alice@walletprovider.com").await?;
+    let pubkey = client.get_pubkey("alice@wallet.com").await?;
     println!("Pubkey: {}", pubkey);
 
-    // Example: Get payment destination
-    let mut req = PaymentRequest {
+    let req = PaymentRequest {
         sender_name: Some("Sender".to_string()),
         sender_handle: "sender@wallet.com".to_string(),
-        dt: "".to_string(), // Set automatically
+        dt: "".to_string(),
         amount: Some(10000),
-        purpose: Some("Test payment".to_string()),
-        signature: "".to_string(), // Set automatically
+        purpose: Some("Test".to_string()),
+        signature: "".to_string(),
     };
-    let output = client.get_payment_destination("alice@walletprovider.com", req).await?;
-    println!("Output script hex: {}", output);
+    let output = client.get_payment_destination("alice@wallet.com", req).await?;
+    println!("Output: {}", output);
+
+    let p2p_resp = client.get_p2p_payment_destination("alice@wallet.com", 10000).await?;
+    println!("P2P: {:?}", p2p_resp);
+
+    let tx_resp = client.send_p2p_tx("alice@wallet.com", "txhex", json!({}), "ref").await?;
+    println!("Tx: {:?}", tx_resp);
 
     Ok(())
 }
