@@ -1,4 +1,7 @@
-use crate::{models::{P2PPaymentDestinationResponse, P2PTxResponse}, PaymailClient, PaymailError};
+use crate::{
+    models::{P2PPaymentDestinationResponse, P2PTxResponse},
+    PaymailClient, PaymailError,
+};
 use serde_json::Value;
 
 pub async fn resolve_p2p_address(
