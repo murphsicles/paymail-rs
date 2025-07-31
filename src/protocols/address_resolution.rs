@@ -1,4 +1,4 @@
-use crate::{models::PaymentRequest, PaymailClient, PaymailError, utils};
+use crate::{models::PaymentRequest, PaymailClient, PaymailError};
 
 pub async fn resolve_address(
     client: &PaymailClient,
@@ -8,12 +8,12 @@ pub async fn resolve_address(
     purpose: Option<String>,
 ) -> Result<String, PaymailError> {
     let mut req = PaymentRequest {
-        sender_name: None,  // Optional
+        sender_name: None,
         sender_handle: sender_handle.to_string(),
-        dt: "".to_string(),  // Set in client
+        dt: "".to_string(),
         amount,
         purpose,
-        signature: "".to_string(),  // Set in client
+        signature: "".to_string(),
     };
     client.get_payment_destination(paymail, req).await
 }
