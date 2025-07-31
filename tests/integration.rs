@@ -1,12 +1,12 @@
-use paymail_rs::{PaymailClient, models::PaymentRequest};
+use paymail_rs::{models::PaymentRequest, PaymailClient};
 use secp256k1::SecretKey;
-use wiremock::{Mock, MockServer, ResponseTemplate};
 use wiremock::matchers::{method, path};
+use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[tokio::test]
 async fn test_get_capabilities() {
     let mock_server = MockServer::start().await;
-    let dummy_priv = SecretKey::from_slice(&[0;32]).unwrap();
+    let dummy_priv = SecretKey::from_slice(&[0; 32]).unwrap();
     let client = PaymailClient::builder().build(dummy_priv);
 
     Mock::given(method("GET"))
