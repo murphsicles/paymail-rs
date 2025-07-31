@@ -41,28 +41,3 @@ pub struct PkiResponse {
     pub handle: String,
     pub pubkey: String,
 }
-
-#[derive(Serialize, Debug)]
-pub struct P2PPaymentDestinationRequest {
-    pub satoshis: u64,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct P2PPaymentDestinationResponse {
-    pub outputs: Vec<Value>,
-    pub reference: String,
-}
-
-#[derive(Serialize, Debug)]
-pub struct P2PTxRequest {
-    pub hex: String,
-    pub metadata: Value,
-    pub reference: String,
-    pub signature: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct P2PTxResponse {
-    pub txid: String,
-    pub note: Option<String>,
-}
