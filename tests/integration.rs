@@ -1,4 +1,4 @@
-use paymail_rs::{models::PaymentRequest, PaymailClient};
+use paymail_rs::{PaymailClient, models::PaymentRequest};
 use secp256k1::SecretKey;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
