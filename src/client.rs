@@ -39,7 +39,10 @@ impl PaymailClient {
         let (host, port) = resolve_host(domain).await?;
         let url = format!("https://{}:{}/.well-known/bsvalias", host, port);
         let resp: Capabilities = self.http.get(&url).send().await?.json().await?;
-        cache.insert(domain.to_string(), (resp.clone(), Instant::now() + self.cache_ttl));
+        cache.insert(
+            domain.to_string(),
+            (resp.clone(), Instant::now() + self.cache_ttl),
+        );
         Ok(resp)
     }
 
@@ -51,30 +54,58 @@ impl PaymailClient {
         Ok(resp.pubkey)
     }
 
-    pub async fn get_payment_destination(&self, paymail: &str, mut req: PaymentRequest) -> Result<String, PaymailError> {
+    pub async fn get_payment_destination(
+        &self,
+        paymail: &str,
+        mut req: PaymentRequest,
+    ) -> Result<String, PaymailError> {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "paymentDestination", &alias, &domain)?;
         req.dt = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         req.signature = utils::generate_signature(&self.priv_key, &req.signable_message())?;
-        let resp: PaymentDestinationResponse = self.http.post(&endpoint).json(&req).send().await?.json().await?;
+        let resp: PaymentDestinationResponse = self
+            .http
+            .post(&endpoint)
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(resp.output)
     }
 
-    pub async fn get_p2p_payment_destination(&self, paymail: &str, satoshis: u64) -> Result<P2PPaymentDestinationResponse, PaymailError> {
+    pub async fn get_p2p_payment_destination(
+        &self,
+        paymail: &str,
+        satoshis: u64,
+    ) -> Result<P2PPaymentDestinationResponse, PaymailError> {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "2a40af698840", &alias, &domain)?;
         let req = P2PPaymentDestinationRequest { satoshis };
-        let resp: P2PPaymentDestinationResponse = self.http.post(&endpoint).json(&req).send().await?.json().await?;
+        let resp: P2PPaymentDestinationResponse = self
+            .http
+            .post(&endpoint)
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(resp)
     }
 
-    pub async fn send_p2p_tx(&self, paymail: &str, hex: &str, metadata: Value, reference: &str) -> Result<P2PTxResponse, PaymailError> {
+    pub async fn send_p2p_tx(
+        &self,
+        paymail: &str,
+        hex: &str,
+        metadata: Value,
+        reference: &str,
+    ) -> Result<P2PTxResponse, PaymailError> {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "5f1323cddf31", &alias, &domain)?;
-        let message = format!("{}|{}", hex, reference); // Adjust as per spec for signing
+        let message = format!("{}|{}", hex, reference);
         let signature = utils::generate_signature(&self.priv_key, &message)?;
         let req = P2PTxRequest {
             hex: hex.to_string(),
@@ -82,11 +113,23 @@ impl PaymailClient {
             reference: reference.to_string(),
             signature,
         };
-        let resp: P2PTxResponse = self.http.post(&endpoint).json(&req).send().await?.json().await?;
+        let resp: P2PTxResponse = self
+            .http
+            .post(&endpoint)
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(resp)
     }
 
-    pub async fn call_extension(&self, paymail: &str, brfc_id: &str, body: Option<Value>) -> Result<Value, PaymailError> {
+    pub async fn call_extension(
+        &self,
+        paymail: &str,
+        brfc_id: &str,
+        body: Option<Value>,
+    ) -> Result<Value, PaymailError> {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, brfc_id, &alias, &domain)?;
@@ -106,7 +149,9 @@ pub struct PaymailClientBuilder {
 
 impl Default for PaymailClientBuilder {
     fn default() -> Self {
-        Self { cache_ttl: Duration::from_secs(3600) }
+        Self {
+            cache_ttl: Duration::from_secs(3600),
+        }
     }
 }
 
@@ -134,9 +179,16 @@ fn parse_paymail(paymail: &str) -> Result<(String, String), PaymailError> {
     Ok((parts[0].to_string(), parts[1].to_string()))
 }
 
-fn get_template(caps: &Capabilities, key: &str, alias: &str, domain: &str) -> Result<String, PaymailError> {
+fn get_template(
+    caps: &Capabilities,
+    key: &str,
+    alias: &str,
+    domain: &str,
+) -> Result<String, PaymailError> {
     if let Some(Value::String(tmpl)) = caps.capabilities.get(key) {
-        Ok(tmpl.replace("{alias}", alias).replace("{domain.tld}", domain))
+        Ok(tmpl
+            .replace("{alias}", alias)
+            .replace("{domain.tld}", domain))
     } else {
         Err(PaymailError::CapabilityMissing(key.to_string()))
     }
