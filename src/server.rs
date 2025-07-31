@@ -1,27 +1,70 @@
 use async_trait::async_trait;
 
 use crate::errors::PaymailError;
-use crate::models::{PkiResponse, PaymentDestinationResponse};
+use crate::models::{P2PPaymentDestinationResponse, P2PTxResponse, PaymentDestinationResponse, PkiResponse};
 use crate::utils;
+use serde_json::Value;
 
 #[async_trait]
 pub trait PaymailHandler {
     async fn handle_pki(&self, alias: &str, domain: &str) -> Result<PkiResponse, PaymailError>;
 
     async fn handle_payment_destination(
-        &self,
-        alias: &str,
+        &self, alias: &str,
         domain: &str,
         sender_handle: &str,
         dt: &str,
         amount: Option<u64>,
         purpose: Option<String>,
         signature: &str,
-    ) -> Result<PaymentDestinationResponse, PaymailError>;
+        sender_pubkey: &str, // Fetch sender's pubkey to verify sig
+    ) -> Result<PaymentDestinationResponse, PaymailError> {
+        // Example verification
+        let message = format!("{}|{}|{}|{}", sender_handle, dt, amount.unwrap_or(0), purpose.as_deref().unwrap_or(""));
+        if !utils::verify_signature(sender_pubkey, signature, &message)? {
+            return Err(PaymailError::InvalidSignature("Signature verification failed".to_string()));
+        }
+        // Generate single-use script
+        let script = "76a914deadbeef88ac".to_string(); // Dummy; use rust-sv to generate P2PKH
+        Ok(PaymentDestinationResponse { output: script })
+    }
 
-    // TODO: Add handlers for P2P, verifiable messages, etc.
+    async fn handle_p2p_payment_destination(
+        &self, alias: &str,
+        domain: &str,
+        satoshis: u64,
+    ) -> Result<P2PPaymentDestinationResponse, PaymailError> {
+        // Generate outputs
+        let outputs = vec![Value::Object(serde_json::Map::from_iter(vec![
+            ("script".to_string(), Value::String("76a914deadbeef88ac".to_string())),
+            ("satoshis".to_string(), Value::Number(satoshis.into())),
+        ]))];
+        Ok(P2PPaymentDestinationResponse {
+            outputs,
+            reference: "unique-ref".to_string(),
+        })
+    }
+
+    async fn handle_p2p_tx(
+        &self, alias: &str,
+        domain: &str,
+        hex: &str,
+        metadata: Value,
+        reference: &str,
+        signature: &str,
+        sender_pubkey: &str,
+    ) -> Result<P2PTxResponse, PaymailError> {
+        let message = format!("{}|{}", hex, reference);
+        if !utils::verify_signature(sender_pubkey, signature, &message)? {
+            return Err(PaymailError::InvalidSignature("Signature verification failed".to_string()));
+        }
+        // Process tx, e.g., broadcast to BSV network using rust-sv
+        let txid = "txid-from-broadcast".to_string(); // Dummy
+        Ok(P2PTxResponse {
+            txid,
+            note: Some("Received".to_string()),
+        })
+    }
 }
 
-// Example impl would be provided by user, e.g., struct MyHandler { ... } impl PaymailHandler { ... }
-// In handle_pki, return pubkey from wallet or db, using rust-sv for key gen if needed.
-// In handle_payment_destination, verify signature using utils::verify_signature, then generate single-use script via rust-sv Script.
+// Users can impl this trait for their server logic.
