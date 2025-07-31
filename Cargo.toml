@@ -8,12 +8,12 @@ repository = "https://github.com/murphsicles/paymail-rs"
 authors = ["Dr. Roy Murphy"]
 
 [dependencies]
-tokio = { version = "1.47.0", features = ["full"] }
+tokio = { version = "1.46.1", features = ["full"] }
 reqwest = { version = "0.12.22", features = ["json", "rustls-tls"] }
 serde = { version = "1.0.219", features = ["derive"] }
 trust-dns-resolver = "0.23.2"
 chrono = "0.4.38"
-async-mutex = "1.4.0"
+async-mutex = "1.4.1"
 sv = { git = "https://github.com/murphsicles/rust-sv.git", tag = "v0.4.3" }
 base64 = "0.22.1"
 hex = "0.4.3"
