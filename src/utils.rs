@@ -1,21 +1,14 @@
+use base64::Engine;
 use crate::errors::PaymailError;
-use base64;
 use hex;
-use ring::digest::{SHA256, digest};
-use secp256k1::{Message, PublicKey, RecoveryId, Secp256k1, SecretKey, ecdsa};
+use ring::digest::SHA256;
+use secp256k1::{ecdsa, Message, PublicKey, Secp256k1, SecretKey};
 use sv::script::Script;
-use sv::util::hash256::sha256d;
 
 pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String, PaymailError> {
-    let prefix = b"Bitcoin Signed Message:\n";
-    let mut prefixed_message = Vec::new();
-    write_var_int(message.len() as u64, &mut prefixed_message);
-    prefixed_message.extend_from_slice(message.as_bytes());
-    let mut full_message = Vec::new();
-    full_message.extend_from_slice(prefix);
-    full_message.extend_from_slice(&prefixed_message);
-    let hash = sha256d(&full_message);
-    let msg = Message::from_slice(&hash.0).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let hash = ring::digest::digest(&SHA256, message.as_bytes());
+    let msg = Message::from_digest_slice(hash.as_ref())
+        .map_err(|e| PaymailError::Other(e.to_string()))?;
     let secp = Secp256k1::new();
     let recoverable_sig = secp.sign_ecdsa_recoverable(&msg, priv_key);
     let (recovery_id, compact) = recoverable_sig.serialize_compact();
@@ -48,21 +41,15 @@ pub fn verify_signature(
             "Invalid recovery header".to_string(),
         ));
     }
-    let recovery_id = RecoveryId::from_i32((header - 31) as i32)
+    let recovery_id = ecdsa::RecoveryId::from_i32((header - 31) as i32)
         .map_err(|e| PaymailError::Other(e.to_string()))?;
     let compact_sig = ecdsa::RecoverableSignature::from_compact(&sig_bytes[1..], recovery_id)
         .map_err(|e| PaymailError::Other(e.to_string()))?;
     let standard_sig = compact_sig.to_standard();
 
-    let prefix = b"Bitcoin Signed Message:\n";
-    let mut prefixed_message = Vec::new();
-    write_var_int(message.len() as u64, &mut prefixed_message);
-    prefixed_message.extend_from_slice(message.as_bytes());
-    let mut full_message = Vec::new();
-    full_message.extend_from_slice(prefix);
-    full_message.extend_from_slice(&prefixed_message);
-    let hash = sha256d(&full_message);
-    let msg = Message::from_slice(&hash.0).map_err(|e| PaymailError::Other(e.to_string()))?;
+    let hash = ring::digest::digest(&SHA256, message.as_bytes());
+    let msg = Message::from_digest_slice(hash.as_ref())
+        .map_err(|e| PaymailError::Other(e.to_string()))?;
 
     let secp = Secp256k1::new();
     Ok(secp.verify_ecdsa(&msg, &standard_sig, &pub_key).is_ok())
@@ -71,19 +58,4 @@ pub fn verify_signature(
 pub fn parse_script(hex_str: &str) -> Result<Script, PaymailError> {
     let bytes = hex::decode(hex_str).map_err(|e| PaymailError::Other(e.to_string()))?;
     Ok(Script(bytes))
-}
-
-fn write_var_int(n: u64, buf: &mut Vec<u8>) {
-    if n < 0xfd {
-        buf.push(n as u8);
-    } else if n <= 0xffff {
-        buf.push(0xfd);
-        buf.extend_from_slice(&(n as u16).to_le_bytes());
-    } else if n <= 0xffffffff {
-        buf.push(0xfe);
-        buf.extend_from_slice(&(n as u32).to_le_bytes());
-    } else {
-        buf.push(0xff);
-        buf.extend_from_slice(&n.to_le_bytes());
-    }
 }
