@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Capabilities {
     pub bsvalias: String,
     pub capabilities: HashMap<String, Value>,
@@ -40,4 +40,29 @@ pub struct PkiResponse {
     pub bsvalias: String,
     pub handle: String,
     pub pubkey: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct P2PPaymentDestinationRequest {
+    pub satoshis: u64,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct P2PPaymentDestinationResponse {
+    pub outputs: Vec<Value>,
+    pub reference: String,
+}
+
+#[derive(Serialize, Debug)]
+pub struct P2PTxRequest {
+    pub hex: String,
+    pub metadata: Value,
+    pub reference: String,
+    pub signature: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct P2PTxResponse {
+    pub txid: String,
+    pub note: Option<String>,
 }
