@@ -13,16 +13,15 @@ pub trait PaymailHandler {
 
     async fn handle_payment_destination(
         &self,
-        alias: &str,
-        domain: &str,
+        _alias: &str,
+        _domain: &str,
         sender_handle: &str,
         dt: &str,
         amount: Option<u64>,
         purpose: Option<String>,
         signature: &str,
-        sender_pubkey: &str, // Fetch sender's pubkey to verify sig
+        sender_pubkey: &str,
     ) -> Result<PaymentDestinationResponse, PaymailError> {
-        // Example verification
         let message = format!(
             "{}|{}|{}|{}",
             sender_handle,
@@ -35,18 +34,16 @@ pub trait PaymailHandler {
                 "Signature verification failed".to_string(),
             ));
         }
-        // Generate single-use script
-        let script = "76a914deadbeef88ac".to_string(); // Dummy; use rust-sv to generate P2PKH
+        let script = "76a914deadbeef88ac".to_string();
         Ok(PaymentDestinationResponse { output: script })
     }
 
     async fn handle_p2p_payment_destination(
         &self,
-        alias: &str,
-        domain: &str,
+        _alias: &str,
+        _domain: &str,
         satoshis: u64,
     ) -> Result<P2PPaymentDestinationResponse, PaymailError> {
-        // Generate outputs
         let outputs = vec![Value::Object(serde_json::Map::from_iter(vec![
             (
                 "script".to_string(),
@@ -62,8 +59,8 @@ pub trait PaymailHandler {
 
     async fn handle_p2p_tx(
         &self,
-        alias: &str,
-        domain: &str,
+        _alias: &str,
+        _domain: &str,
         hex: &str,
         metadata: Value,
         reference: &str,
@@ -76,13 +73,10 @@ pub trait PaymailHandler {
                 "Signature verification failed".to_string(),
             ));
         }
-        // Process tx, e.g., broadcast to BSV network using rust-sv
-        let txid = "txid-from-broadcast".to_string(); // Dummy
+        let txid = "txid-from-broadcast".to_string();
         Ok(P2PTxResponse {
             txid,
             note: Some("Received".to_string()),
         })
     }
 }
-
-// Users can impl this trait for their server logic.
