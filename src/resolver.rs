@@ -1,9 +1,10 @@
 use crate::errors::PaymailError;
-use trust_dns_resolver::TokioAsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
+use trust_dns_resolver::TokioAsyncResolver;
 
 pub async fn resolve_host(domain: &str) -> Result<(String, u16), PaymailError> {
-    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())?;
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())
+        .map_err(|e| PaymailError::DnsFailure(e.to_string()))?;
     let srv_query = format!("_bsvalias._tcp.{}", domain);
     if let Ok(srv) = resolver.srv_lookup(srv_query).await {
         if let Some(record) = srv.iter().next() {
@@ -15,7 +16,6 @@ pub async fn resolve_host(domain: &str) -> Result<(String, u16), PaymailError> {
             return Ok((target, record.port()));
         }
     }
-    // Fallback to A/AAAA on port 443
     if let Ok(a_lookup) = resolver.ipv4_lookup(domain).await {
         if let Some(ip) = a_lookup.iter().next() {
             return Ok((ip.to_string(), 443));
