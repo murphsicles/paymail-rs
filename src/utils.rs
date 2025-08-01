@@ -15,7 +15,7 @@ pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String,
     let mut full_sig = [0u8; 65];
     full_sig[0] = 31 + recovery_id.to_i32() as u8;
     full_sig[1..].copy_from_slice(&compact);
-    Ok(base64::engine::general_purpose::STANDARD.encode(&full_sig))
+    Ok(base64::engine::general_purpose::STANDARD.encode(full_sig))
 }
 
 pub fn verify_signature(
