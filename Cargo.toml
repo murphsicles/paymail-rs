@@ -26,3 +26,4 @@ thiserror = "1.0.64"
 [dev-dependencies]
 wiremock = "0.6.3"
 criterion = { version = "0.6.0", features = ["async_tokio"] }
+mockall = "0.12.1"
