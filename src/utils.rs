@@ -1,8 +1,8 @@
-use base64::Engine;
 use crate::errors::PaymailError;
+use base64::Engine;
 use hex;
 use ring::digest::SHA256;
-use secp256k1::{ecdsa, Message, PublicKey, Secp256k1, SecretKey};
+use secp256k1::{Message, PublicKey, Secp256k1, SecretKey, ecdsa};
 use sv::script::Script;
 
 pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String, PaymailError> {
