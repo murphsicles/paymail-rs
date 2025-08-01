@@ -25,5 +25,7 @@ pub async fn resolve_host(domain: &str) -> Result<(String, u16), PaymailError> {
             return Ok((ip.to_string(), 443));
         }
     }
-    Err(PaymailError::DnsFailure(format!("No host found for {domain}")))
+    Err(PaymailError::DnsFailure(format!(
+        "No host found for {domain}"
+    )))
 }
