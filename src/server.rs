@@ -62,7 +62,7 @@ pub trait PaymailHandler {
         _alias: &str,
         _domain: &str,
         hex: &str,
-        metadata: Value,
+        _metadata: Value,
         reference: &str,
         signature: &str,
         sender_pubkey: &str,
