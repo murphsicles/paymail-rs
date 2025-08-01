@@ -1,5 +1,5 @@
-use sv::util::Error as SvError;
 use thiserror::Error;
+use sv::util::Error as SvError;
 
 #[derive(Error, Debug)]
 pub enum PaymailError {
