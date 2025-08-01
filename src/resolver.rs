@@ -3,13 +3,19 @@ use trust_dns_resolver::TokioAsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
 pub trait Resolver {
-    fn resolve_host(&self, domain: &str) -> impl std::future::Future<Output = Result<(String, u16), PaymailError>> + Send;
+    fn resolve_host(
+        &self,
+        domain: &str,
+    ) -> impl std::future::Future<Output = Result<(String, u16), PaymailError>> + Send;
 }
 
 pub struct DefaultResolver;
 
 impl Resolver for DefaultResolver {
-    fn resolve_host(&self, domain: &str) -> impl std::future::Future<Output = Result<(String, u16), PaymailError>> + Send {
+    fn resolve_host(
+        &self,
+        domain: &str,
+    ) -> impl std::future::Future<Output = Result<(String, u16), PaymailError>> + Send {
         async move {
             let resolver =
                 TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
