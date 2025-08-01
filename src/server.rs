@@ -11,6 +11,7 @@ use serde_json::Value;
 pub trait PaymailHandler {
     async fn handle_pki(&self, alias: &str, domain: &str) -> Result<PkiResponse, PaymailError>;
 
+    #[allow(clippy::too_many_arguments)]
     async fn handle_payment_destination(
         &self,
         _alias: &str,
@@ -23,11 +24,9 @@ pub trait PaymailHandler {
         sender_pubkey: &str,
     ) -> Result<PaymentDestinationResponse, PaymailError> {
         let message = format!(
-            "{}|{}|{}|{}",
-            sender_handle,
-            dt,
-            amount.unwrap_or(0),
-            purpose.as_deref().unwrap_or("")
+            "{sender_handle}|{dt}|{amount}|{purpose}",
+            amount = amount.unwrap_or(0),
+            purpose = purpose.as_deref().unwrap_or("")
         );
         if !utils::verify_signature(sender_pubkey, signature, &message)? {
             return Err(PaymailError::InvalidSignature(
@@ -57,6 +56,7 @@ pub trait PaymailHandler {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn handle_p2p_tx(
         &self,
         _alias: &str,
@@ -67,7 +67,7 @@ pub trait PaymailHandler {
         signature: &str,
         sender_pubkey: &str,
     ) -> Result<P2PTxResponse, PaymailError> {
-        let message = format!("{}|{}", hex, reference);
+        let message = format!("{hex}|{reference}");
         if !utils::verify_signature(sender_pubkey, signature, &message)? {
             return Err(PaymailError::InvalidSignature(
                 "Signature verification failed".to_string(),
