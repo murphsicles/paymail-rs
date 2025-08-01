@@ -1,16 +1,15 @@
-use crate::errors::PaymailError;
 use base64;
+use crate::errors::PaymailError;
 use hex;
-use ring::digest::{SHA256, digest};
-use secp256k1::{Message, PublicKey, RecoveryId, Secp256k1, SecretKey, ecdsa};
+use ring::digest::{digest, SHA256};
+use secp256k1::{ecdsa, Message, PublicKey, RecoveryId, Secp256k1, SecretKey};
 use sv::script::Script;
 use sv::util::hash256::sha256d;
-use sv::util::var_int;
 
 pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String, PaymailError> {
     let prefix = b"Bitcoin Signed Message:\n";
     let mut prefixed_message = Vec::new();
-    var_int::write(message.len() as u64, &mut prefixed_message)?;
+    write_var_int(message.len() as u64, &mut prefixed_message);
     prefixed_message.extend_from_slice(message.as_bytes());
     let mut full_message = Vec::new();
     full_message.extend_from_slice(prefix);
@@ -57,7 +56,7 @@ pub fn verify_signature(
 
     let prefix = b"Bitcoin Signed Message:\n";
     let mut prefixed_message = Vec::new();
-    var_int::write(message.len() as u64, &mut prefixed_message)?;
+    write_var_int(message.len() as u64, &mut prefixed_message);
     prefixed_message.extend_from_slice(message.as_bytes());
     let mut full_message = Vec::new();
     full_message.extend_from_slice(prefix);
@@ -72,4 +71,19 @@ pub fn verify_signature(
 pub fn parse_script(hex_str: &str) -> Result<Script, PaymailError> {
     let bytes = hex::decode(hex_str).map_err(|e| PaymailError::Other(e.to_string()))?;
     Ok(Script(bytes))
+}
+
+fn write_var_int(n: u64, buf: &mut Vec<u8>) {
+    if n < 0xfd {
+        buf.push(n as u8);
+    } else if n <= 0xffff {
+        buf.push(0xfd);
+        buf.extend_from_slice(&(n as u16).to_le_bytes());
+    } else if n <= 0xffffffff {
+        buf.push(0xfe);
+        buf.extend_from_slice(&(n as u32).to_le_bytes());
+    } else {
+        buf.push(0xff);
+        buf.extend_from_slice(&n.to_le_bytes());
+    }
 }
