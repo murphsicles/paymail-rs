@@ -3,8 +3,7 @@ use trust_dns_resolver::TokioAsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
 pub async fn resolve_host(domain: &str) -> Result<(String, u16), PaymailError> {
-    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default())
-        .map_err(|e| PaymailError::DnsFailure(e.to_string()))?;
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
     let srv_query = format!("_bsvalias._tcp.{}", domain);
     if let Ok(srv) = resolver.srv_lookup(srv_query).await {
         if let Some(record) = srv.iter().next() {
