@@ -1,8 +1,8 @@
-use base64;
 use crate::errors::PaymailError;
+use base64;
 use hex;
-use ring::digest::{digest, SHA256};
-use secp256k1::{ecdsa, Message, PublicKey, RecoveryId, Secp256k1, SecretKey};
+use ring::digest::{SHA256, digest};
+use secp256k1::{Message, PublicKey, RecoveryId, Secp256k1, SecretKey, ecdsa};
 use sv::script::Script;
 use sv::util::hash256::sha256d;
 
