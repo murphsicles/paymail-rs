@@ -37,7 +37,7 @@ impl PaymailClient {
             }
         }
         let (host, port) = resolve_host(domain).await?;
-        let url = format!("https://{}:{}/.well-known/bsvalias", host, port);
+        let url = format!("https://{host}:{port}/.well-known/bsvalias");
         let resp: Capabilities = self.http.get(&url).send().await?.json().await?;
         cache.insert(
             domain.to_string(),
@@ -105,7 +105,7 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "5f1323cddf31", &alias, &domain)?;
-        let message = format!("{}|{}", hex, reference);
+        let message = format!("{hex}|{reference}");
         let signature = utils::generate_signature(&self.priv_key, &message)?;
         let req = P2PTxRequest {
             hex: hex.to_string(),
