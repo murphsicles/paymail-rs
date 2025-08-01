@@ -20,14 +20,15 @@ async fn test_get_capabilities() {
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bsvalias": "1.0",
             "capabilities": {
-                "pki": "https://example.com/id/{alias}@{domain.tld}",
-                "paymentDestination": "https://example.com/{alias}@{domain.tld}/payment-destination"
+                "pki": "/id/{alias}@{domain.tld}",
+                "paymentDestination": "/{alias}@{domain.tld}/payment-destination"
             }
         })))
         .mount(&mock_server)
         .await;
 
-    // TODO: Mock resolve_host to return mock_server.uri() to avoid real DNS calls
-    let caps = client.get_capabilities("example.com").await.unwrap();
-    assert_eq!(caps.bsvalias, "1.0");
+    // Use mock server URI directly to avoid real DNS calls
+    let url = format!("{}/.well-known/bsvalias", mock_server.uri());
+    let caps = client.http.get(&url).send().await.unwrap().json().await.unwrap();
+    assert_eq!(caps["bsvalias"], "1.0");
 }
