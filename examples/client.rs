@@ -1,7 +1,6 @@
-use paymail_rs::{PaymailClient, models::PaymentRequest};
+use paymail_rs::{models::PaymentRequest, PaymailClient};
 use secp256k1::SecretKey;
 use serde_json::json;
-use tokio;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -9,7 +8,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = PaymailClient::builder().build(priv_key);
 
     let pubkey = client.get_pubkey("alice@wallet.com").await?;
-    println!("Pubkey: {}", pubkey);
+    println!("Pubkey: {pubkey}");
 
     let req = PaymentRequest {
         sender_name: Some("Sender".to_string()),
@@ -22,17 +21,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = client
         .get_payment_destination("alice@wallet.com", req)
         .await?;
-    println!("Output: {}", output);
+    println!("Output: {output}");
 
     let p2p_resp = client
         .get_p2p_payment_destination("alice@wallet.com", 10000)
         .await?;
-    println!("P2P: {:?}", p2p_resp);
+    println!("P2P: {p2p_resp:?}");
 
     let tx_resp = client
         .send_p2p_tx("alice@wallet.com", "txhex", json!({}), "ref")
         .await?;
-    println!("Tx: {:?}", tx_resp);
+    println!("Tx: {tx_resp:?}");
 
     Ok(())
 }
