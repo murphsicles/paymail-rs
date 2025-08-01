@@ -29,6 +29,14 @@ async fn test_get_capabilities() {
 
     // Use mock server URI directly to avoid real DNS calls
     let url = format!("{}/.well-known/bsvalias", mock_server.uri());
-    let caps = client.http.get(&url).send().await.unwrap().json().await.unwrap();
+    let caps = client
+        .http
+        .get(&url)
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
     assert_eq!(caps["bsvalias"], "1.0");
 }
