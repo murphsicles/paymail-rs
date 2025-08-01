@@ -1,7 +1,18 @@
+use mockall::mock;
 use paymail_rs::PaymailClient;
+use paymail_rs::resolver::Resolver;
 use secp256k1::SecretKey;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
+
+// Mock Resolver trait
+mock! {
+    Resolver {}
+    #[async_trait::async_trait]
+    impl Resolver for Resolver {
+        async fn resolve_host(&self, domain: &str) -> Result<(String, u16), paymail_rs::errors::PaymailError>;
+    }
+}
 
 #[tokio::test]
 async fn test_get_capabilities() {
@@ -15,6 +26,21 @@ async fn test_get_capabilities() {
     .unwrap();
     let client = PaymailClient::builder().build(dummy_priv);
 
+    // Mock resolve_host to return mock server's host and port
+    let mut mock_resolver = MockResolver::new();
+    let mock_uri = mock_server.uri();
+    let mock_host = mock_uri
+        .strip_prefix("http://")
+        .unwrap_or(&mock_uri)
+        .strip_suffix('/')
+        .unwrap_or(&mock_uri)
+        .to_string();
+    mock_resolver
+        .expect_resolve_host()
+        .with(mockall::predicate::eq("example.com"))
+        .times(1)
+        .returning(move |_| Ok((mock_host.clone(), 80)));
+
     Mock::given(method("GET"))
         .and(path("/.well-known/bsvalias"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -27,16 +53,7 @@ async fn test_get_capabilities() {
         .mount(&mock_server)
         .await;
 
-    // Use mock server URI directly to avoid real DNS calls
-    let url = format!("{}/.well-known/bsvalias", mock_server.uri());
-    let caps = client
-        .http
-        .get(&url)
-        .send()
-        .await
-        .unwrap()
-        .json()
-        .await
-        .unwrap();
-    assert_eq!(caps["bsvalias"], "1.0");
+    // Use the mocked resolver
+    let caps = client.get_capabilities("example.com").await.unwrap();
+    assert_eq!(caps.bsvalias, "1.0");
 }
