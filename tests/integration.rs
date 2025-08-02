@@ -5,7 +5,6 @@ use secp256k1::SecretKey;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-// Mock Resolver trait
 mock! {
     Resolver {}
     #[async_trait::async_trait]
@@ -24,9 +23,8 @@ async fn test_get_capabilities() {
         0x1f, 0x20,
     ])
     .unwrap();
-    let client = PaymailClient::builder().build(dummy_priv);
 
-    // Mock resolve_host to return mock server's host and port
+    // Mock resolver to return mock server's host and port
     let mut mock_resolver = MockResolver::new();
     let mock_uri = mock_server.uri();
     let mock_host = mock_uri
@@ -41,6 +39,10 @@ async fn test_get_capabilities() {
         .times(1)
         .returning(move |_| Ok((mock_host.clone(), 80)));
 
+    let client = PaymailClient::builder()
+        .resolver(Arc::new(mock_resolver))
+        .build(dummy_priv);
+
     Mock::given(method("GET"))
         .and(path("/.well-known/bsvalias"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
@@ -53,7 +55,9 @@ async fn test_get_capabilities() {
         .mount(&mock_server)
         .await;
 
-    // Use the mocked resolver
-    let caps = client.get_capabilities("example.com").await.unwrap();
+    let caps = client
+        .get_capabilities("example.com")
+        .await
+        .expect("Failed to get capabilities");
     assert_eq!(caps.bsvalias, "1.0");
 }
