@@ -28,21 +28,22 @@ async fn test_get_capabilities() {
     // Mock resolver to return mock server's host and port
     let mut mock_resolver = MockResolver::new();
     let mock_uri = mock_server.uri();
-    // Parse host and port from URI (e.g., "http://127.0.0.1:33551" -> "127.0.0.1:33551")
+    // Extract host and port from URI (e.g., "http://127.0.0.1:43229" -> "127.0.0.1", 43229)
     let mock_host = mock_uri
         .strip_prefix("http://")
-        .unwrap_or(&mock_uri)
-        .strip_suffix('/')
-        .unwrap_or(&mock_uri)
+        .and_then(|s| s.split(':').next())
+        .unwrap_or("127.0.0.1")
         .to_string();
+    let mock_port = mock_uri
+        .strip_prefix("http://")
+        .and_then(|s| s.split(':').nth(1))
+        .and_then(|s| s.trim_end_matches('/').parse::<u16>().ok())
+        .unwrap_or(80);
     mock_resolver
         .expect_resolve_host()
         .with(mockall::predicate::eq("example.com"))
         .times(1)
-        .returning(move |_| {
-            // Ensure the host includes the port for wiremock compatibility
-            Ok((mock_host.clone(), 80))
-        });
+        .returning(move |_| Ok((mock_host.clone(), mock_port)));
 
     let client = PaymailClient::builder()
         .resolver(Arc::new(mock_resolver))
