@@ -13,7 +13,7 @@ use crate::models::{
     Capabilities, P2PPaymentDestinationRequest, P2PPaymentDestinationResponse, P2PTxRequest,
     P2PTxResponse, PaymentDestinationResponse, PaymentRequest, PkiResponse,
 };
-use crate::resolver::resolve_host;
+use crate::resolver::Resolver;
 use crate::utils;
 
 #[derive(Clone)]
@@ -22,6 +22,7 @@ pub struct PaymailClient {
     cache: Arc<Mutex<HashMap<String, (Capabilities, Instant)>>>,
     cache_ttl: Duration,
     priv_key: SecretKey,
+    resolver: Arc<dyn Resolver + Send + Sync>,
 }
 
 impl PaymailClient {
@@ -36,8 +37,8 @@ impl PaymailClient {
                 return Ok(caps.clone());
             }
         }
-        let (host, port) = resolve_host(domain).await?;
-        let url = format!("https://{host}:{port}/.well-known/bsvalias");
+        let (host, port) = self.resolver.resolve_host(domain).await?;
+        let url = format!("http://{host}:{port}/.well-known/bsvalias");
         let resp: Capabilities = self.http.get(&url).send().await?.json().await?;
         cache.insert(
             domain.to_string(),
@@ -145,12 +146,14 @@ impl PaymailClient {
 
 pub struct PaymailClientBuilder {
     cache_ttl: Duration,
+    resolver: Option<Arc<dyn Resolver + Send + Sync>>,
 }
 
 impl Default for PaymailClientBuilder {
     fn default() -> Self {
         Self {
             cache_ttl: Duration::from_secs(3600),
+            resolver: None,
         }
     }
 }
@@ -161,12 +164,18 @@ impl PaymailClientBuilder {
         self
     }
 
+    pub fn resolver(mut self, resolver: Arc<dyn Resolver + Send + Sync>) -> Self {
+        self.resolver = Some(resolver);
+        self
+    }
+
     pub fn build(self, priv_key: SecretKey) -> PaymailClient {
         PaymailClient {
             http: Arc::new(Client::new()),
             cache: Arc::new(Mutex::new(HashMap::new())),
             cache_ttl: self.cache_ttl,
             priv_key,
+            resolver: self.resolver.unwrap_or_else(|| Arc::new(crate::resolver::DefaultResolver)),
         }
     }
 }
