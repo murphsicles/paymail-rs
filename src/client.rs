@@ -175,7 +175,9 @@ impl PaymailClientBuilder {
             cache: Arc::new(Mutex::new(HashMap::new())),
             cache_ttl: self.cache_ttl,
             priv_key,
-            resolver: self.resolver.unwrap_or_else(|| Arc::new(crate::resolver::DefaultResolver)),
+            resolver: self
+                .resolver
+                .unwrap_or_else(|| Arc::new(crate::resolver::DefaultResolver)),
         }
     }
 }
