@@ -12,7 +12,8 @@ pub struct DefaultResolver;
 #[async_trait::async_trait]
 impl Resolver for DefaultResolver {
     async fn resolve_host(&self, domain: &str) -> Result<(String, u16), PaymailError> {
-        let resolver = TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
+        let resolver =
+            TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
         let srv_query = format!("_bsvalias._tcp.{domain}");
         if let Ok(srv) = resolver.srv_lookup(srv_query).await {
             if let Some(record) = srv.iter().next() {
