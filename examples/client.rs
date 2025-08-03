@@ -4,7 +4,7 @@ use serde_json::json;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let priv_key = SecretKey::from_byte_array(&[0; 32])?;
+    let priv_key = SecretKey::from_byte_array([0; 32])?;
     let client = PaymailClient::builder().build(priv_key);
 
     let pubkey = client.get_pubkey("alice@wallet.com").await?;
