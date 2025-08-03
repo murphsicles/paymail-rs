@@ -7,8 +7,8 @@ use sv::script::Script;
 
 pub fn generate_signature(priv_key: &SecretKey, message: &str) -> Result<String, PaymailError> {
     let hash = ring::digest::digest(&SHA256, message.as_bytes());
-    let msg = Message::from_digest(hash.as_ref())
-        .map_err(|e| PaymailError::Other(e.to_string()))?;
+    let msg =
+        Message::from_digest(hash.as_ref()).map_err(|e| PaymailError::Other(e.to_string()))?;
     let secp = Secp256k1::new();
     let recoverable_sig = secp.sign_ecdsa_recoverable(msg, priv_key);
     let (recovery_id, compact) = recoverable_sig.serialize_compact();
@@ -48,8 +48,8 @@ pub fn verify_signature(
     let standard_sig = compact_sig.to_standard();
 
     let hash = ring::digest::digest(&SHA256, message.as_bytes());
-    let msg = Message::from_digest(hash.as_ref())
-        .map_err(|e| PaymailError::Other(e.to_string()))?;
+    let msg =
+        Message::from_digest(hash.as_ref()).map_err(|e| PaymailError::Other(e.to_string()))?;
 
     let secp = Secp256k1::new();
     Ok(secp.verify_ecdsa(msg, &standard_sig, &pub_key).is_ok())
