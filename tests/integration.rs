@@ -18,7 +18,7 @@ mock! {
 async fn test_get_capabilities() {
     let mock_server = MockServer::start().await;
     // Use a valid secp256k1 private key (example: 32 bytes, non-zero, valid scalar)
-    let dummy_priv = SecretKey::from_slice(&[
+    let dummy_priv = SecretKey::from_byte_array(&[
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e,
         0x1f, 0x20,
@@ -71,7 +71,7 @@ async fn test_get_capabilities() {
 async fn test_get_pubkey() {
     let mock_server = MockServer::start().await;
     // Use a valid secp256k1 private key (example: 32 bytes, non-zero, valid scalar)
-    let dummy_priv = SecretKey::from_slice(&[
+    let dummy_priv = SecretKey::from_byte_array(&[
         0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e,
         0x1f, 0x20,
@@ -94,7 +94,7 @@ async fn test_get_pubkey() {
     mock_resolver
         .expect_resolve_host()
         .with(mockall::predicate::eq("example.com"))
-        .times(2) // Allow two calls: one for get_capabilities, one for get_pubkey
+        .times(2)
         .returning(move |_| Ok((mock_host.clone(), mock_port)));
 
     let client = PaymailClient::builder()
