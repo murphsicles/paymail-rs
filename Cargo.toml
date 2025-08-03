@@ -24,6 +24,6 @@ secp256k1 = { version = "0.31.1", features = ["recovery"] }
 thiserror = "2.0.12"
 
 [dev-dependencies]
-wiremock = "0.6.3"
+wiremock = "0.6.4"
 criterion = { version = "0.7.0", features = ["async_tokio"] }
 mockall = "0.13.1"
