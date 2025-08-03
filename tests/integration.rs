@@ -43,9 +43,7 @@ async fn test_get_capabilities() {
         .expect_resolve_host()
         .with(mockall::predicate::eq("example.com"))
         .times(1)
-        .returning(move |_| {
-            Ok((mock_host.clone(), mock_port))
-        });
+        .returning(move |_| Ok((mock_host.clone(), mock_port)));
 
     let client = PaymailClient::builder()
         .resolver(Arc::new(mock_resolver))
@@ -98,9 +96,7 @@ async fn test_get_pubkey() {
         .expect_resolve_host()
         .with(mockall::predicate::eq("example.com"))
         .times(1)
-        .returning(move |_| {
-            Ok((mock_host.clone(), mock_port))
-        });
+        .returning(move |_| Ok((mock_host.clone(), mock_port)));
 
     let client = PaymailClient::builder()
         .resolver(Arc::new(mock_resolver))
