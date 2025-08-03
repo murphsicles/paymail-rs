@@ -30,6 +30,11 @@ impl PaymailClient {
         PaymailClientBuilder::default()
     }
 
+    pub async fn get_base_url(&self, domain: &str) -> Result<String, PaymailError> {
+        let (host, port) = self.resolver.resolve_host(domain).await?;
+        Ok(format!("http://{host}:{port}"))
+    }
+
     pub async fn get_capabilities(&self, domain: &str) -> Result<Capabilities, PaymailError> {
         let mut cache = self.cache.lock().await;
         if let Some((caps, exp)) = cache.get(domain) {
@@ -37,8 +42,8 @@ impl PaymailClient {
                 return Ok(caps.clone());
             }
         }
-        let (host, port) = self.resolver.resolve_host(domain).await?;
-        let url = format!("http://{host}:{port}/.well-known/bsvalias");
+        let base_url = self.get_base_url(domain).await?;
+        let url = format!("{base_url}/.well-known/bsvalias");
         let resp: Capabilities = self.http.get(&url).send().await?.json().await?;
         cache.insert(
             domain.to_string(),
@@ -51,7 +56,13 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let pki_endpoint = get_template(&caps, "pki", &alias, &domain)?;
-        let resp: PkiResponse = self.http.get(&pki_endpoint).send().await?.json().await?;
+        let base_url = self.get_base_url(&domain).await?;
+        let pki_url = if pki_endpoint.starts_with('/') {
+            format!("{base_url}{pki_endpoint}")
+        } else {
+            pki_endpoint
+        };
+        let resp: PkiResponse = self.http.get(&pki_url).send().await?.json().await?;
         Ok(resp.pubkey)
     }
 
@@ -63,11 +74,17 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "paymentDestination", &alias, &domain)?;
+        let base_url = self.get_base_url(&domain).await?;
+        let full_endpoint = if endpoint.starts_with('/') {
+            format!("{base_url}{endpoint}")
+        } else {
+            endpoint
+        };
         req.dt = Utc::now().to_rfc3339_opts(SecondsFormat::Millis, true);
         req.signature = utils::generate_signature(&self.priv_key, &req.signable_message())?;
         let resp: PaymentDestinationResponse = self
             .http
-            .post(&endpoint)
+            .post(&full_endpoint)
             .json(&req)
             .send()
             .await?
@@ -84,10 +101,16 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "2a40af698840", &alias, &domain)?;
+        let base_url = self.get_base_url(&domain).await?;
+        let full_endpoint = if endpoint.starts_with('/') {
+            format!("{base_url}{endpoint}")
+        } else {
+            endpoint
+        };
         let req = P2PPaymentDestinationRequest { satoshis };
         let resp: P2PPaymentDestinationResponse = self
             .http
-            .post(&endpoint)
+            .post(&full_endpoint)
             .json(&req)
             .send()
             .await?
@@ -106,6 +129,12 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, "5f1323cddf31", &alias, &domain)?;
+        let base_url = self.get_base_url(&domain).await?;
+        let full_endpoint = if endpoint.starts_with('/') {
+            format!("{base_url}{endpoint}")
+        } else {
+            endpoint
+        };
         let message = format!("{hex}|{reference}");
         let signature = utils::generate_signature(&self.priv_key, &message)?;
         let req = P2PTxRequest {
@@ -116,7 +145,7 @@ impl PaymailClient {
         };
         let resp: P2PTxResponse = self
             .http
-            .post(&endpoint)
+            .post(&full_endpoint)
             .json(&req)
             .send()
             .await?
@@ -134,10 +163,16 @@ impl PaymailClient {
         let (alias, domain) = parse_paymail(paymail)?;
         let caps = self.get_capabilities(&domain).await?;
         let endpoint = get_template(&caps, brfc_id, &alias, &domain)?;
-        let resp = if let Some(b) = body {
-            self.http.post(&endpoint).json(&b).send().await?
+        let base_url = self.get_base_url(&domain).await?;
+        let full_endpoint = if endpoint.starts_with('/') {
+            format!("{base_url}{endpoint}")
         } else {
-            self.http.get(&endpoint).send().await?
+            endpoint
+        };
+        let resp = if let Some(b) = body {
+            self.http.post(&full_endpoint).json(&b).send().await?
+        } else {
+            self.http.get(&full_endpoint).send().await?
         };
         let json: Value = resp.json().await?;
         Ok(json)
