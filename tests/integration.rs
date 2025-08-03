@@ -28,7 +28,6 @@ async fn test_get_capabilities() {
     // Mock resolver to return mock server's host and port
     let mut mock_resolver = MockResolver::new();
     let mock_uri = mock_server.uri();
-    // Extract host and port from URI (e.g., "http://127.0.0.1:43229" -> "127.0.0.1", 43229)
     let mock_host = mock_uri
         .strip_prefix("http://")
         .and_then(|s| s.split(':').next())
@@ -95,7 +94,7 @@ async fn test_get_pubkey() {
     mock_resolver
         .expect_resolve_host()
         .with(mockall::predicate::eq("example.com"))
-        .times(1)
+        .times(2) // Allow two calls: one for get_capabilities, one for get_pubkey
         .returning(move |_| Ok((mock_host.clone(), mock_port)));
 
     let client = PaymailClient::builder()
