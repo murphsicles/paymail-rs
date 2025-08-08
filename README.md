@@ -1,6 +1,6 @@
 # paymail-rs 🚀
 
-[![Rust](https://img.shields.io/badge/rust-1.82%2B-orange?logo=rust)](https://www.rust-lang.org)
+[![Rust](https://img.shields.io/badge/rust-1.86%2B-orange?logo=rust)](https://www.rust-lang.org)
 [![Dependencies](https://deps.rs/repo/github/murphsicles/paymail-rs/status.svg)](https://deps.rs/repo/github/murphsicles/paymail-rs)
 [![CI](https://github.com/murphsicles/paymail-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/murphsicles/paymail-rs/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-BSV-blue)](LICENSE)
