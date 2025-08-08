@@ -37,10 +37,8 @@ impl PaymailClient {
 
     pub async fn get_capabilities(&self, domain: &str) -> Result<Capabilities, PaymailError> {
         let mut cache = self.cache.lock().await;
-        if let Some((caps, exp)) = cache.get(domain) {
-            if Instant::now() < *exp {
-                return Ok(caps.clone());
-            }
+        if let Some((caps, exp)) = cache.get(domain) && Instant::now() < *exp {
+            return Ok(caps.clone());
         }
         let base_url = self.get_base_url(domain).await?;
         let url = format!("{base_url}/.well-known/bsvalias");
