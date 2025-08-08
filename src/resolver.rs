@@ -15,7 +15,9 @@ impl Resolver for DefaultResolver {
         let resolver =
             TokioAsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
         let srv_query = format!("_bsvalias._tcp.{}", domain);
-        if let Ok(srv) = resolver.srv_lookup(&srv_query).await && let Some(record) = srv.iter().next() {
+        if let Ok(srv) = resolver.srv_lookup(&srv_query).await
+            && let Some(record) = srv.iter().next()
+        {
             let target = record
                 .target()
                 .to_string()
@@ -23,10 +25,14 @@ impl Resolver for DefaultResolver {
                 .to_string();
             return Ok((target, record.port()));
         }
-        if let Ok(a_lookup) = resolver.ipv4_lookup(domain).await && let Some(ip) = a_lookup.iter().next() {
+        if let Ok(a_lookup) = resolver.ipv4_lookup(domain).await
+            && let Some(ip) = a_lookup.iter().next()
+        {
             return Ok((ip.to_string(), 443));
         }
-        if let Ok(aaaa_lookup) = resolver.ipv6_lookup(domain).await && let Some(ip) = aaaa_lookup.iter().next() {
+        if let Ok(aaaa_lookup) = resolver.ipv6_lookup(domain).await
+            && let Some(ip) = aaaa_lookup.iter().next()
+        {
             return Ok((ip.to_string(), 443));
         }
         Err(PaymailError::DnsFailure(format!(
