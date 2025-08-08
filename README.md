@@ -23,7 +23,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-paymail-rs = { git = "https://github.com/your-repo/paymail-rs.git", tag = "v0.1.1" }
+paymail-rs = { git = "https://github.com/your-repo/paymail-rs.git", tag = "v0.1.2" }
 ```
 
 Ensure you have Rust 1.86 or later installed.
